@@ -13,6 +13,10 @@
 #  starting the backup. After the backup terminates normally you may restart all stopped
 #  applications or just reboot the system. 
 #
+# 2019-05-14 Dolorosus  
+#        fix: Useless rsync of /boot removed 
+#             (imx6 doesn't have a seperate /boot partioion)
+# 
 # 2019-05-12 Dolorosus                  
 #        fix: Creation of backupfile works now.
 #
@@ -176,13 +180,12 @@ do_backup () {
 	rsyncopt="-aEvx --del --stats"
 
 	if mountpoint -q ${MOUNTDIR}; then
-		trace "Starting rsync backup of / and /boot/ to ${MOUNTDIR}"
+		trace "Starting rsync backup of / to ${MOUNTDIR}"
 
 		if [ -n "${opt_log}" ]; then
 			rsyncopt="$rsyncopt --log-file ${LOG}"
 		fi
 
-		rsync $rsyncopt  /boot/ ${MOUNTDIR}/boot/
 		rsync $rsyncopt --exclude='.gvfs/**' \
 			--exclude='tmp/**' \
 			--exclude='proc/**' \
