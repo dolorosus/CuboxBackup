@@ -18,6 +18,7 @@ E.g.:
 * CuboxBackup.sh start [-cslzdf] [-L logfile] sdimage
 * CuboxBackup.sh mount [-c] sdimage [mountdir]
 * CuboxBackup.sh umount sdimage [mountdir]
+* CuboxBackup.sh showdf sdimage
 * CuboxBackup.sh gzip [-df] sdimage
 
 ### Commands:
@@ -25,6 +26,7 @@ E.g.:
 * *start* - starts complete backup of cubox's SD Card to 'sdimage'
 * *mount* - mounts the 'sdimage' to 'mountdir' (default: /mnt/'sdimage'/)
 * *umount* - unmounts the 'sdimage' from 'mountdir'
+* *showdf* - shows a df of the 'sdimage' 
 * *gzip* - compresses the 'sdimage' to 'sdimage'.gz
 
 ### Options:
