@@ -15,7 +15,7 @@
 #
 # 2019-05-14 Dolorosus  
 #        fix: Useless rsync of /boot removed 
-#             (imx6 doesn't have a seperate /boot partioion)
+#             (imx6 doesn't have a seperate /boot partition)
 # 
 # 2019-05-12 Dolorosus                  
 #        fix: Creation of backupfile works now.
