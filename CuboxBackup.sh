@@ -194,7 +194,8 @@ do_backup () {
 			--exclude='mnt/**' \
 			--exclude='lost+found/**' \
 			--exclude='var/swap ' \
-			--exclude='home/la/.cache/**' \
+			--exclude='home/*/.cache/**' \
+			--exclude='var/cache/apt/archives/**' \
 			 / ${MOUNTDIR}/
 
 	else
@@ -236,7 +237,6 @@ do_resize () {
 	partx --add ${LOOPBACK}
 	e2fsck -f ${LOOPBACK}p1
 	resize2fs ${LOOPBACK}p1
-	do_umount
 }
 
 # Compresses ${IMAGE} to ${IMAGE}.gz using a temp file during compression
