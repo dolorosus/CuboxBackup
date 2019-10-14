@@ -225,6 +225,20 @@ do_umount () {
 	losetup -d ${LOOPBACK}
 }
 
+#
+# resize image
+#
+do_resize () {
+	do_umount >/dev/null 2>&1
+	truncate --size=+1G "${IMAGE}"
+	losetup ${LOOPBACK} "${IMAGE}"
+	parted -s ${LOOPBACK} resizepart 1 100%
+	partx --add ${LOOPBACK}
+	e2fsck -f ${LOOPBACK}p1
+	resize2fs ${LOOPBACK}p1
+	do_umount
+}
+
 # Compresses ${IMAGE} to ${IMAGE}.gz using a temp file during compression
 do_compress () {
 	trace "Compressing ${IMAGE} to ${IMAGE}.gz"
@@ -315,7 +329,7 @@ setup
 
 # Read the command from command line
 case ${1} in
-	start|mount|umount|gzip|cloneid|showdf) 
+	start|mount|umount|gzip|cloneid|showdf|resize) 
 		opt_command=${1}
 		;;
 	-h|--help)
@@ -467,6 +481,9 @@ case ${opt_command} in
 		;;
 	cloneid)
 		do_cloneid
+		;;
+	resize)
+		do_resize
 		;;
 	showdf)
 		do_mount
