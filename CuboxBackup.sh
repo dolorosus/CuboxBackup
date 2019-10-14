@@ -270,7 +270,7 @@ ctrl_c () {
 
 # Prints usage information
 usage () {
-cat<<EOF	
+cat<<EOF
 	${MYNAME}
 	
 	Usage:
@@ -321,7 +321,9 @@ cat<<EOF
 	
 	    ${MYNAME} umount /path/to/cubox-$(date +%Y-%m-%d).img
 	        unmounts the SD Image from default mountdir (/mnt/cubox-$(date +%Y-%m-%d).img/)
-EOF	
+	
+EOF
+
 }
 
 
