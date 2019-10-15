@@ -61,11 +61,6 @@ error () {
     exit 1
 }
 
-version () {
-    trace "$Date$"
-    trace "$Revision$"
-    trace " "
-}
 
 # Creates a sparse ${IMAGE} clone of ${SDCARD} and attaches to ${LOOPBACK}
 do_create () {
@@ -238,6 +233,7 @@ cat<<EOF
         ${MYNAME} ${BOLD}start${NOATT} [-clzdf] [-L logfile] [-i sdcard] sdimage
         ${MYNAME} ${BOLD}mount${NOATT} [-c] sdimage [mountdir]
         ${MYNAME} ${BOLD}umount${NOATT} sdimage [mountdir]
+        ${MYNAME} ${BOLD}resize${NOATT} sdimage
         ${MYNAME} ${BOLD}gzip${NOATT} [-df] sdimage
     
         Commands:
@@ -248,7 +244,7 @@ cat<<EOF
             ${BOLD}gzip${NOATT}       compresses the 'sdimage' to 'sdimage'.gz
             ${BOLD}cloneid${NOATT}    clones the UUID/PTUUID from the actual disk to the image
             ${BOLD}showdf${NOATT}     shows allocation of the image
-            ${BOLD}version${NOATT}    show script version
+            ${BOLD}resize${NOATT}     add 1G to 'imagefile'
     
         Options:
     
@@ -292,7 +288,7 @@ setup
 
 # Read the command from command line
 case ${1} in
-    start|mount|umount|gzip|cloneid|showdf|resize|version) 
+    start|mount|umount|gzip|cloneid|showdf|resize) 
         opt_command=${1}
         ;;
     -h|--help)
@@ -452,9 +448,6 @@ case ${opt_command} in
         do_mount
         do_showdf
         do_umount
-        ;;
-    version)
-        version
         ;;
     *)
         error "Unknown command: ${opt_command}"
