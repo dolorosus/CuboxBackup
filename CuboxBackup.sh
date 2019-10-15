@@ -244,6 +244,7 @@ cat<<EOF
             ${BOLD}resize${NOATT}     add 1G to the szize of 'sdimage'
             ${BOLD}gzip${NOATT}       compresses the 'sdimage' to 'sdimage'.gz
             ${BOLD}showdf${NOATT}     shows allocation of the image
+            ${BOLD}version${NOATT}    show version
     
         Options:
     
