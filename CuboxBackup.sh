@@ -117,16 +117,14 @@ do_create () {
 # Mounts the ${IMAGE} to ${LOOPBACK} (if needed) and ${MOUNTDIR}
 do_mount () {
     # Check if do_create already attached the SD Image
-    if [ $(losetup -f) = ${LOOPBACK} ]; then
+    [ $(losetup -f) = ${LOOPBACK} ] && {
         trace "Attaching ${IMAGE} to ${LOOPBACK}"
         losetup ${LOOPBACK} ${IMAGE}
         partx --add ${LOOPBACK}
-    fi
+    }
 
     trace "Mounting ${LOOPBACK}1  to ${MOUNTDIR}"
-    if [ ! -n "${opt_mountdir}" ]; then
-        mkdir ${MOUNTDIR}
-    fi
+    [ -n "${opt_mountdir}" ] ||  mkdir ${MOUNTDIR}
      mount ${LOOPBACK}p1 ${MOUNTDIR}
 }
 
@@ -172,9 +170,7 @@ do_umount () {
 
     trace "Unmounting ${LOOPBACK}1  from ${MOUNTDIR}"
     umount ${MOUNTDIR}
-    if [ ! -n "${opt_mountdir}" ]; then
-        rmdir ${MOUNTDIR}
-    fi
+    [ -n "${opt_mountdir}" ] || rmdir ${MOUNTDIR}
 
     trace "Detaching ${IMAGE} from ${LOOPBACK}"
     partx --delete ${LOOPBACK}
@@ -198,12 +194,10 @@ do_resize () {
 do_compress () {
     trace "Compressing ${IMAGE} to ${IMAGE}.gz"
     pv -tpreb ${IMAGE} | gzip > ${IMAGE}.gz.tmp
-    if [ -s ${IMAGE}.gz.tmp ]; then
+    [ -s ${IMAGE}.gz.tmp ] && {
         mv -f ${IMAGE}.gz.tmp ${IMAGE}.gz
-        if [ -n "${opt_delete}" ]; then
-            rm -f ${IMAGE}
-        fi
-    fi
+        [ -n "${opt_delete}" ] && rm -f ${IMAGE}
+    }
 }
 
 # Tries to cleanup after Ctrl-C interrupt
@@ -216,9 +210,7 @@ ctrl_c () {
         do_umount
     fi
 
-    if [ -n "${opt_log}" ]; then
-        trace "See rsync log in ${LOG}"
-    fi
+    [ -n "${opt_log}" ] && trace "See rsync log in ${LOG}"
 
     error "SD Image backup process interrupted"
 }
@@ -301,9 +293,7 @@ esac
 shift 1
 
 # Make sure we have root rights
-if [ $(id -u) -ne 0 ]; then
-    error "Please run as root. Try sudo."
-fi
+[ $(id -u) -ne 0 ] &&  error "Please run as root. Try sudo."
 
 # Default size, can be overwritten by the -s option
 SIZE=$(blockdev --getsz $SDCARD)
@@ -331,15 +321,11 @@ shift $((OPTIND-1))
 
 # Read the sdimage path from command line
 IMAGE=${1}
-if [ -z ${IMAGE} ]; then
-    error "No sdimage specified"
-fi
+[ -z ${IMAGE} ] && error "No sdimage specified"
 
 # Check if sdimage exists
 if [ ${opt_command} = umount ] || [ ${opt_command} = gzip ]; then
-    if [ ! -f ${IMAGE} ]; then
-        error "${IMAGE} does not exist"
-    fi
+    [ -f ${IMAGE} ] || error "${IMAGE} does not exist"
 else
     if [ ! -f ${IMAGE} ] && [ ! -n "${opt_create}" ]; then
         error "${IMAGE} does not exist\nUse -c to allow creation"
@@ -354,16 +340,12 @@ if [ -n "${opt_compress}" ] || [ ${opt_command} = gzip ]; then
 fi
 
 # Define default rsync logfile if not defined
-if [ -z ${LOG} ]; then
-    LOG=${IMAGE}-$(date +%Y%m%d%H%M%S).log
-fi
+[ -z ${LOG} ] &&  LOG=${IMAGE}-$(date +%Y%m%d%H%M%S).log
 
 # Identify which loopback device to use
 LOOPBACK=$(losetup -j ${IMAGE} | grep -o ^[^:]*)
 if [ ${opt_command} = umount ]; then
-    if [ -z ${LOOPBACK} ]; then
-        error "No /dev/loop<X> attached to ${IMAGE}"
-    fi
+    [ -z ${LOOPBACK} ] && error "No /dev/loop<X> attached to ${IMAGE}"
 elif [ ! -z ${LOOPBACK} ]; then
     error "${IMAGE} already attached to ${LOOPBACK} mounted on $(grep ${LOOPBACK}p1 /etc/mtab | cut -d ' ' -f 2)/"
 else
@@ -377,16 +359,12 @@ if [ -z ${MOUNTDIR} ]; then
     MOUNTDIR=/mnt/$(basename ${IMAGE})/
 else
     opt_mountdir=1
-    if [ ! -d ${MOUNTDIR} ]; then
-        error "Mount point ${MOUNTDIR} does not exist"
-    fi
+    [ -d ${MOUNTDIR} ] || error "Mount point ${MOUNTDIR} does not exist"
 fi
 
 # Check if default mount point exists
 if [ ${opt_command} = umount ]; then
-    if [ ! -d ${MOUNTDIR} ]; then
-        error "Default mount point ${MOUNTDIR} does not exist"
-    fi
+    [ -d ${MOUNTDIR} ] || error "Mount point ${MOUNTDIR} does not exist"
 else
     if [ ! -n "${opt_mountdir}" ] && [ -d ${MOUNTDIR} ]; then
         error "Default mount point ${MOUNTDIR} already exists"
@@ -417,13 +395,9 @@ case ${opt_command} in
         do_backup
         do_showdf
         do_umount
-        if [ -n "${opt_compress}" ]; then
-            do_compress
-        fi
+        [ -n "${opt_compress}" ] && do_compress
         trace "SD Image backup process completed."
-        if [ -n "$opt_log" ]; then
-            trace "See rsync log in $LOG"
-        fi
+        [ -n "$opt_log" ] && trace "See rsync log in $LOG"
         ;;
     mount)
         if [ ! -f ${IMAGE} ] && [ -n "$opt_create" ]; then
