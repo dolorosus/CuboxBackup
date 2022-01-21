@@ -61,6 +61,7 @@ error () {
     exit 1
 }
 
+version () {
 
 # Creates a sparse ${IMAGE} clone of ${SDCARD} and attaches to ${LOOPBACK}
 do_create () {
