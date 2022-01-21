@@ -74,4 +74,4 @@ CuboxBackup.sh umount /path/to/backup.img
 
 This script takes a backup while the source partitions are mounted and in use. The resulting imagefile will be inconsistent!
 
-To minimize inconsistencies, you should terminate as many services as possible before starting the backup. An example is provided at https://github.com/dolorosus/RaspiBackup/blob/master/daily.sh.
+To minimize inconsistencies, you should isolate the system to rescue before starting the backup. An example is provided at https://github.com/dolorosus/RaspiBackup/blob/master/WeeklyBackup.sh
