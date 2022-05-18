@@ -187,7 +187,6 @@ do_backup () {
 }
 
 do_showdf () {
-
     echo -n "${GREEN}"
     df -m ${LOOPBACK}p1
     echo -n "$NOATT"
