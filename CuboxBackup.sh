@@ -14,10 +14,9 @@
 #  applications or just reboot the system.
 #
 
-
 SDCARD=/dev/mmcblk1
 
-setup () {
+setup() {
     #
     # Define some fancy colors only if connected to a terminal.
     # Thus output to file is no more cluttered
@@ -33,7 +32,7 @@ setup () {
         RESET=$(tput setaf 9)
         BOLD=$(tput bold)
         NOATT=$(tput sgr0)
-        }||{
+    } || {
         RED=""
         GREEN=""
         YELLOW=""
@@ -49,26 +48,25 @@ setup () {
     MYDIR=$(dirname $0)
 }
 
-
 # Echos traces with yellow text to distinguish from other output
-trace () {
+trace() {
     echo -e "${YELLOW}${1}${NOATT}"
 }
 
 # Echos en error string in red text and exit
-error () {
+error() {
     echo -e "${RED}${1}${NOATT}" >&2
     exit 1
 }
 
-version () {
+version() {
     trace "$Date$"
     trace "$Revision$"
     trace " "
 }
 
 # Creates a sparse ${IMAGE} clone of ${SDCARD} and attaches to ${LOOPBACK}
-do_create () {
+do_create() {
 
     local ubootdir
 
@@ -79,7 +77,7 @@ do_create () {
     #
 
     ubootdir=$MYDIR/uboot
-    [ -d  ${ubootdir} ] || mkdir ${ubootdir}
+    [ -d ${ubootdir} ] || mkdir ${ubootdir}
     export SPL=${ubootdir}/spl-imx6-sdhc.bin
     export UBOOT=${ubootdir}/u-boot-imx6-sdhc.img
 
@@ -90,7 +88,7 @@ do_create () {
     [ -f ${UBOOT} ] || error "UBOOT not found."
 
     trace "Creating sparse ${IMAGE}, the apparent size of $SDCARD"
-    rm ${IMAGE}>/dev/null 2>&1
+    rm ${IMAGE} >/dev/null 2>&1
     dd if=/dev/zero of=${IMAGE} bs=${BLOCKSIZE} count=0 seek=${SIZE}
     if [ -s ${IMAGE} ]; then
         trace "Attaching ${IMAGE} to ${LOOPBACK}"
@@ -114,13 +112,10 @@ do_create () {
 
     losetup -d ${LOOP}
 
-    clone
-
 }
 
-
 # Mounts the ${IMAGE} to ${LOOPBACK} (if needed) and ${MOUNTDIR}
-do_mount () {
+do_mount() {
     # Check if do_create already attached the SD Image
     [ $(losetup -f) = ${LOOPBACK} ] && {
         trace "Attaching ${IMAGE} to ${LOOPBACK}"
@@ -129,11 +124,11 @@ do_mount () {
     }
 
     trace "Mounting ${LOOPBACK}p1  to ${MOUNTDIR}"
-    [ ! -n "${opt_mountdir}" ] &&  mkdir ${MOUNTDIR}
+    [ ! -n "${opt_mountdir}" ] && mkdir ${MOUNTDIR}
     mount ${LOOPBACK}p1 ${MOUNTDIR}
 }
 
-do_check () {
+do_check() {
 
     do_umount
 
@@ -149,15 +144,15 @@ do_check () {
         return 1
     }
 
-
     msg "Detaching ${IMAGE} from ${LOOPBACK}"
     partx --delete ${LOOPBACK}
     losetup -d ${LOOPBACK}
 }
 
 
+
 # Rsyncs content of ${SDCARD} to ${IMAGE} if properly mounted
-do_backup () {
+do_backup() {
 
     local rsyncopt
 
@@ -168,38 +163,46 @@ do_backup () {
         trace "Starting rsync backup of / to ${MOUNTDIR}"
 
         rsync $rsyncopt --exclude='.gvfs/**' \
-        --exclude='tmp/**' \
-        --exclude='proc/**' \
-        --exclude='run/**' \
-        --exclude='sys/**' \
-        --exclude='mnt/**' \
-        --exclude='lost+found/**' \
-        --exclude='var/swap ' \
-        --exclude='home/*/.cache/**' \
-        --exclude='var/cache/apt/archives/**' \
-        --exclude='var/lib/docker/' \
-        --exclude='var/lib/containerd/' \
-        / ${MOUNTDIR}/
+            --exclude='tmp/**' \
+            --exclude='proc/**' \
+            --exclude='run/**' \
+            --exclude='sys/**' \
+            --exclude='mnt/**' \
+            --exclude='lost+found/**' \
+            --exclude='var/swap ' \
+            --exclude='home/*/.cache/**' \
+            --exclude='var/cache/apt/archives/**' \
+            --exclude='var/lib/docker/' \
+            --exclude='var/lib/containerd/' \
+            / ${MOUNTDIR}/
+        #
+        # Set the UUID in armbianEnv.txt and fstab
+        #
+        UUIDorg=$(blkid -o value ${SDCARD} | head -1)
+        UUIDloop=$(blkid -o value ${LOOPBACK}p1 | head -1)
+        sed /${UUIDorg}/${UUIDloop}/ ${MOUNTDIR}/boot/armbianEnv.txt
+        sed /${UUIDorg}/${UUIDloop}/ ${MOUNTDIR}/etc/fstab
 
     else
         trace "Skipping rsync since ${MOUNTDIR} is not a mount point"
     fi
 }
 
-do_showdf () {
+do_showdf() {
     echo -n "${GREEN}"
     df -m ${LOOPBACK}p1
     echo -n "$NOATT"
 }
 
 # Unmounts the ${IMAGE} from ${MOUNTDIR} and ${LOOPBACK}
-do_umount () {
+do_umount() {
     trace "Flushing to disk"
-    sync; sync
+    sync
+    sync
 
     trace "Unmounting ${LOOPBACK}1  from ${MOUNTDIR}"
     umount ${MOUNTDIR}
-    [ ! -n "${opt_mountdir}" ] &&   rmdir ${MOUNTDIR}
+    [ ! -n "${opt_mountdir}" ] && rmdir ${MOUNTDIR}
 
     trace "Detaching ${IMAGE} from ${LOOPBACK}"
     partx --delete ${LOOPBACK}
@@ -209,7 +212,7 @@ do_umount () {
 #
 # resize image
 #
-do_resize () {
+do_resize() {
     do_umount >/dev/null 2>&1
     truncate --size=+1G "${IMAGE}"
     losetup ${LOOPBACK} "${IMAGE}"
@@ -220,17 +223,17 @@ do_resize () {
 }
 
 # Compresses ${IMAGE} to ${IMAGE}.gz using a temp file during compression
-do_compress () {
+do_compress() {
     trace "Compressing ${IMAGE} to ${IMAGE}.gz"
-    pv -tpreb ${IMAGE} | gzip > ${IMAGE}.gz.tmp
+    pv -tpreb ${IMAGE} | gzip >${IMAGE}.gz.tmp
     [ -s ${IMAGE}.gz.tmp ] && {
         mv -f ${IMAGE}.gz.tmp ${IMAGE}.gz
-        [ -n "${opt_delete}" ] &&   rm -f ${IMAGE}
+        [ -n "${opt_delete}" ] && rm -f ${IMAGE}
     }
 }
 
 # Tries to cleanup after Ctrl-C interrupt
-ctrl_c () {
+ctrl_c() {
     trace "Ctrl-C detected."
 
     if [ -s ${IMAGE}.gz.tmp ]; then
@@ -239,14 +242,14 @@ ctrl_c () {
         do_umount
     fi
 
-    [ -n "${opt_log}" ] &&  trace "See rsync log in ${LOG}"
+    [ -n "${opt_log}" ] && trace "See rsync log in ${LOG}"
 
     error "SD Image backup process interrupted"
 }
 
 # Prints usage information
-usage () {
-cat<<EOF
+usage() {
+    cat <<EOF
     ${MYNAME}
 
     Usage:
@@ -263,7 +266,6 @@ cat<<EOF
             ${BOLD}umount${NOATT}     unmounts the 'sdimage' from 'mountdir'
             ${BOLD}check${NOATT}      filesystemcheck on 'sdimage'
             ${BOLD}gzip${NOATT}       compresses the 'sdimage' to 'sdimage'.gz
-            ${BOLD}cloneid${NOATT}    clones the UUID/PTUUID from the actual disk to the image
             ${BOLD}showdf${NOATT}     shows allocation of the image
             ${BOLD}version${NOATT}    show script version
 
@@ -304,25 +306,25 @@ EOF
 
 }
 
-
 setup
 
 # Read the command from command line
 case ${1} in
-    start|mount|umount|gzip|cloneid|showdf|resize|version)
-        opt_command=${1}
+start | mount | umount | gzip | cloneid | showdf | resize | version)
+    opt_command=${1}
     ;;
-    -h|--help)
-        usage
-        exit 0
+-h | --help)
+    usage
+    exit 0
     ;;
-    *)
-    error "Invalid command or option: ${1}\nSee '${MYNAME} --help' for usage";;
+*)
+    error "Invalid command or option: ${1}\nSee '${MYNAME} --help' for usage"
+    ;;
 esac
 shift 1
 
 # Make sure we have root rights
-[ $(id -u) -ne 0 ] &&  error "Please run as root. Try sudo."
+[ $(id -u) -ne 0 ] && error "Please run as root. Try sudo."
 
 # Default size, can be overwritten by the -s option
 SIZE=$(blockdev --getsz $SDCARD)
@@ -331,30 +333,33 @@ BLOCKSIZE=$(blockdev --getss $SDCARD)
 # Read the options from command line
 while getopts ":czdflL:i:s:" opt; do
     case ${opt} in
-        c)  opt_create=1;;
-        z)  opt_compress=1;;
-        d)  opt_delete=1;;
-        f)  opt_force=1;;
-        l)  opt_log=1;;
-        L)  opt_log=1
-            LOG=${OPTARG}
+    c) opt_create=1 ;;
+    z) opt_compress=1 ;;
+    d) opt_delete=1 ;;
+    f) opt_force=1 ;;
+    l) opt_log=1 ;;
+    L)
+        opt_log=1
+        LOG=${OPTARG}
         ;;
-        i)  SDCARD=${OPTARG};;
-        s)  SIZE=${OPTARG}
-        BLOCKSIZE=1M ;;
-        \?) error "Invalid option: -$OPTARG\nSee '${MYNAME} --help' for usage";;
-        :)  error "Option -${OPTARG} requires an argument\nSee '${MYNAME} --help' for usage";;
+    i) SDCARD=${OPTARG} ;;
+    s)
+        SIZE=${OPTARG}
+        BLOCKSIZE=1M
+        ;;
+    \?) error "Invalid option: -$OPTARG\nSee '${MYNAME} --help' for usage" ;;
+    :) error "Option -${OPTARG} requires an argument\nSee '${MYNAME} --help' for usage" ;;
     esac
 done
-shift $((OPTIND-1))
+shift $((OPTIND - 1))
 
 # Read the sdimage path from command line
 IMAGE=${1}
-[ -z ${IMAGE} ] &&  error "No sdimage specified"
+[ -z ${IMAGE} ] && error "No sdimage specified"
 
 # Check if sdimage exists
 if [ ${opt_command} = umount ] || [ ${opt_command} = gzip ]; then
-    [ ! -f ${IMAGE} ] &&  error "${IMAGE} does not exist"
+    [ ! -f ${IMAGE} ] && error "${IMAGE} does not exist"
 else
     if [ ! -f ${IMAGE} ] && [ ! -n "${opt_create}" ]; then
         error "${IMAGE} does not exist\nUse -c to allow creation"
@@ -371,19 +376,17 @@ fi
 # Define default rsync logfile if not defined
 [ -z ${LOG} ] && LOG=${IMAGE}-$(date +%Y%m%d%H%M%S).log
 
-
 # Identify which loopback device to use
 LOOPBACK=$(losetup -j ${IMAGE} | grep -o ^[^:]*)
 if [ ${opt_command} = umount ]; then
     if [ -z ${LOOPBACK} ]; then
         error "No /dev/loop<X> attached to ${IMAGE}"
     fi
-    elif [ ! -z ${LOOPBACK} ]; then
+elif [ ! -z ${LOOPBACK} ]; then
     error "${IMAGE} already attached to ${LOOPBACK} mounted on $(grep ${LOOPBACK}p1 /etc/mtab | cut -d ' ' -f 2)/"
 else
     LOOPBACK=$(losetup -f)
 fi
-
 
 # Read the optional mountdir from command line
 MOUNTDIR=${2}
@@ -396,7 +399,7 @@ fi
 
 # Check if default mount point exists
 if [ ${opt_command} = umount ]; then
-    [ ! -d ${MOUNTDIR} ] &&  error "Default mount point ${MOUNTDIR} does not exist"
+    [ ! -d ${MOUNTDIR} ] && error "Default mount point ${MOUNTDIR} does not exist"
 else
     if [ ! -n "${opt_mountdir}" ] && [ -d ${MOUNTDIR} ]; then
         error "Default mount point ${MOUNTDIR} already exists"
@@ -418,56 +421,54 @@ fi
 
 # Do the requested functionality
 case ${opt_command} in
-    start)
-        trace "Starting SD Image backup process"
-        if [ ! -f ${IMAGE} ] && [ -n "$opt_create" ]; then
-            do_create
-        fi
-        do_mount
-        do_backup
-        do_showdf
-        do_umount
-        if [ -n "${opt_compress}" ]; then
-            do_compress
-        fi
-        trace "SD Image backup process completed."
-        if [ -n "$opt_log" ]; then
-            trace "See rsync log in $LOG"
-        fi
-    ;;
-    mount)
-        if [ ! -f ${IMAGE} ] && [ -n "$opt_create" ]; then
-            do_create
-        fi
-        do_mount
-        trace "SD Image has been mounted and can be accessed at:\n    ${MOUNTDIR}"
-    ;;
-    umount)
-        do_umount
-    ;;
-    check)
-        do_check
-    ;;
-    gzip)
+start)
+    trace "Starting SD Image backup process"
+    if [ ! -f ${IMAGE} ] && [ -n "$opt_create" ]; then
+        do_create
+    fi
+    do_mount
+    do_backup
+    do_showdf
+    do_umount
+    if [ -n "${opt_compress}" ]; then
         do_compress
+    fi
+    trace "SD Image backup process completed."
+    if [ -n "$opt_log" ]; then
+        trace "See rsync log in $LOG"
+    fi
     ;;
-    cloneid)
-        do_cloneid
+mount)
+    if [ ! -f ${IMAGE} ] && [ -n "$opt_create" ]; then
+        do_create
+    fi
+    do_mount
+    trace "SD Image has been mounted and can be accessed at:\n    ${MOUNTDIR}"
     ;;
-    resize)
-        do_resize
+umount)
+    do_umount
     ;;
-    showdf)
-        do_mount
-        do_showdf
-        do_umount
+check)
+    do_check
     ;;
-    version)
-        version
+gzip)
+    do_compress
     ;;
-    *)
-        error "Unknown command: ${opt_command}"
+resize)
+    do_resize
+    ;;
+showdf)
+    do_mount
+    do_showdf
+    do_umount
+    ;;
+version)
+    version
+    ;;
+*)
+    error "Unknown command: ${opt_command}"
     ;;
 esac
 
 exit 0
+
