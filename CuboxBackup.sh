@@ -178,10 +178,10 @@ do_backup() {
         #
         # Set the UUID in armbianEnv.txt and fstab
         #
-        UUIDorg=$(blkid -o value ${SDCARD} | head -1)
-        UUIDloop=$(blkid -o value ${LOOPBACK}p1 | head -1)
-        sed /${UUIDorg}/${UUIDloop}/ ${MOUNTDIR}/boot/armbianEnv.txt
-        sed /${UUIDorg}/${UUIDloop}/ ${MOUNTDIR}/etc/fstab
+        UUIDorg=$(blkid -s UUID -o value ${SDCARD}p1)
+        UUIDloop=$(blkid -s UUID -o value ${LOOPBACK}p1)
+        sed -i s/${UUIDorg}/${UUIDloop}/ ${MOUNTDIR}/boot/armbianEnv.txt
+        sed -i s/${UUIDorg}/${UUIDloop}/ ${MOUNTDIR}/etc/fstab
 
     else
         trace "Skipping rsync since ${MOUNTDIR} is not a mount point"
