@@ -179,11 +179,14 @@ do_backup() {
         # Set the UUID in armbianEnv.txt and fstab
         #
         UUIDorg=$(blkid -s UUID -o value ${SDCARD}p1)
-        trace "got src UUID  ${UUIDorg}"
         UUIDloop=$(blkid -s UUID -o value ${LOOPBACK}p1)
-        trace "got dest UUID ${UUIDorg}"
+
+        trace "changeing ${MOUNTDIR}/boot/armbianEnv.txt from  ${UUIDorg} to ${UUIDloop}"
         sed -i s/${UUIDorg}/${UUIDloop}/ ${MOUNTDIR}/boot/armbianEnv.txt
+
+        trace "changeing ${MOUNTDIR}/etc/fstab from  ${UUIDorg} to ${UUIDloop}"
         sed -i s/${UUIDorg}/${UUIDloop}/ ${MOUNTDIR}/etc/fstab
+
         trace "\n${MOUNTDIR}/boot/armbianEnv.txt:"
         cat ${MOUNTDIR}/boot/armbianEnv.txt
         trace "\n${MOUNTDIR}/etc/fstab:"
