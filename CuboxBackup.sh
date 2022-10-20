@@ -140,7 +140,7 @@ do_check() {
     }
 
     fsck -y ${LOOPBACK}p1 || {
-        msgwarn "Checking ${LOOPBACK}p1 returned_:$err"
+        msgwarn "Checking ${LOOPBACK}p1 returned_:${err}"
         return 1
     }
 
