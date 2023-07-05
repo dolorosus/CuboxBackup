@@ -72,30 +72,29 @@ do_create() {
 
     SIZE=${SIZE:-6000}
     #
-    # https://images.solid-build.xyz/IMX6/U-Boot/spl-imx6-sdhc.bin
-    # https://images.solid-build.xyz/IMX6/U-Boot/u-boot-imx6-sdhc.img
+    # /usr/lib/linux-u-boot-current-cubox-i_23.08.0-trunk_armhf/
+    # 
     #
+    
+    local ubootinst="/usr/lib/u-boot/platform_install.sh"
+    [ -f ${ubootinst} ] || error "${ubootinst} not found!"
+    # this sets DIR to the directory containing the spl uns u-boot of the current system
+    . /usr/lib/u-boot/platform_install.sh
 
-    ubootdir=$MYDIR/uboot
-    [ -d ${ubootdir} ] || mkdir ${ubootdir}
-    export SPL=${ubootdir}/spl-imx6-sdhc.bin
-    export UBOOT=${ubootdir}/u-boot-imx6-sdhc.img
-
-    [ -f ${SPL} ] || wget -O $SPL https://images.solid-build.xyz/IMX6/U-Boot/spl-imx6-sdhc.bin
-    [ -f ${UBOOT} ] || wget -O $UBOOT https://images.solid-build.xyz/IMX6/U-Boot/u-boot-imx6-sdhc.img
-
+    
+    local SPL=${DIR}/SPL.sdhc
+    local UBOOT=${DIR}/u-boot.img.sdhc
+    
     [ -f ${SPL} ] || error "SPL not found."
     [ -f ${UBOOT} ] || error "UBOOT not found."
 
     trace "Creating sparse ${IMAGE}, the apparent size of $SDCARD"
     rm ${IMAGE} >/dev/null 2>&1
     dd if=/dev/zero of=${IMAGE} bs=${BLOCKSIZE} count=0 seek=${SIZE}
-    if [ -s ${IMAGE} ]; then
-        trace "Attaching ${IMAGE} to ${LOOPBACK}"
-        losetup ${LOOPBACK} ${IMAGE}
-    else
-        error "${IMAGE} was not created or has zero size"
-    fi
+    
+    [ -s ${IMAGE} ] || error "${IMAGE} has not been created or has zero size"
+    trace "Attaching ${IMAGE} to ${LOOPBACK}"
+    losetup ${LOOPBACK} ${IMAGE}
 
     LOOP=$(losetup -f)
     losetup ${LOOP} ${IMAGE}
@@ -103,12 +102,14 @@ do_create() {
     trace "Creating partitions on ${LOOPBACK}"
     parted -s ${LOOPBACK} mktable msdos
     parted -s ${LOOPBACK} mkpart primary ext4 4MiB 100%
+    
     trace "Formatting partitions"
     partx --add ${LOOPBACK}
     mkfs.ext4 ${LOOPBACK}p1
-
-    dd if=${SPL} of=${LOOP} bs=1k seek=1 oflag=sync
-    dd if=${UBOOT} of=${LOOP} bs=1k seek=69 oflag=sync
+    
+    trace "writing u-boot to ${LOOP}"
+    dd if=${SPL} of=${LOOP} bs=1k seek=1 oflag=sync status=noxfer
+    dd if=${UBOOT} of=${LOOP} bs=1k seek=69 oflag=sync status=noxfer 
 
     losetup -d ${LOOP}
 
